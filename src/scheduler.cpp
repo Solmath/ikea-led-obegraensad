@@ -128,13 +128,13 @@ bool PluginScheduler::setScheduleByJSONString(String scheduleJson)
     JsonArray schedule = doc.as<JsonArray>();
     for (JsonObject item : schedule)
     {
-        if (!item.containsKey("pluginId") || !item.containsKey("duration"))
+        if (!item["pluginId"].is<int>() || !item["duration"].is<unsigned long>())
         {
             return false;
         }
 
-        int pluginId = item["pluginId"].as<int>();
-        unsigned long duration = item["duration"].as<unsigned long>();
+        int pluginId = item["pluginId"];
+        unsigned long duration = item["duration"];
         Scheduler.addItem(pluginId, duration);
     }
 

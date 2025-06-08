@@ -304,7 +304,7 @@ curl http://your-server/api/data
 
 # Plugin Scheduler
 
-It is possible to switch between plugins automatically.  
+It is possible to switch between plugins automatically.
 You can define your schedule in the Web UI or just send an API call.
 
 ### Set Schedule
@@ -524,7 +524,7 @@ public:
     const char* getName() const override;
 
     void teardown() override; // optional
-    void websocketHook(DynamicJsonDocument &request) override; // optional
+    void websocketHook(JsonDocument &request) override; // optional
 };
 ```
 
@@ -553,7 +553,7 @@ void MyPlugin::teardown() {
   // code if plugin gets deactivated
 }
 
-void MyPlugin::websocketHook(DynamicJsonDocument &request) {
+void MyPlugin::websocketHook(JsonDocument &request) {
   // handle websocket requests
 }
 ```

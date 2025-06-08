@@ -39,7 +39,7 @@ void handleMessage(AsyncWebServerRequest *request)
     Messages.add(text, repeat, id, delay, graph, miny, maxy);
 
     // JSON response
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     jsonResponse["status"] = "success";
     jsonResponse["message"] = "Message received";
 
@@ -54,7 +54,7 @@ void handleMessageRemove(AsyncWebServerRequest *request)
     int id = request->arg("id").toInt();
     Messages.remove(id);
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     jsonResponse["status"] = "success";
     jsonResponse["message"] = "Message removed";
 
@@ -68,7 +68,7 @@ void handleSetPlugin(AsyncWebServerRequest *request)
     int id = request->arg("id").toInt();
     pluginManager.setActivePluginById(id);
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
 
     if (pluginManager.getActivePlugin() && pluginManager.getActivePlugin()->getId() == id)
     {
@@ -92,12 +92,13 @@ void handleSetBrightness(AsyncWebServerRequest *request)
 {
     int value = request->arg("value").toInt();
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
 
     if (value < 0 || value > 255)
     {
         jsonResponse["error"] = true;
-        jsonResponse["errormessage"] = "Invalid brightness value: " + std::to_string(value) + " - must be between 0 and 255.";
+        jsonResponse["errormessage"] =
+            "Invalid brightness value: " + std::to_string(value) + " - must be between 0 and 255.";
         String output;
         serializeJson(jsonResponse, output);
         request->send(422, "application/json", output);
@@ -134,7 +135,7 @@ void handleGetData(AsyncWebServerRequest *request)
     }
     catch (const std::exception &e)
     {
-        StaticJsonDocument<256> jsonResponse;
+        JsonDocument jsonResponse;
         jsonResponse["error"] = true;
         jsonResponse["errormessage"] = e.what();
         String output;
@@ -145,7 +146,7 @@ void handleGetData(AsyncWebServerRequest *request)
 
 void handleGetInfo(AsyncWebServerRequest *request)
 {
-    DynamicJsonDocument jsonDocument(6144);
+    JsonDocument jsonDocument;
     jsonDocument["rows"] = ROWS;
     jsonDocument["cols"] = COLS;
     jsonDocument["status"] = currentStatus;
@@ -184,7 +185,7 @@ void handleSetSchedule(AsyncWebServerRequest *request)
 {
     bool scheduleIsSet = Scheduler.setScheduleByJSONString(request->arg("schedule"));
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     if (!scheduleIsSet)
     {
         jsonResponse["error"] = true;
@@ -210,7 +211,7 @@ void handleClearSchedule(AsyncWebServerRequest *request)
     Scheduler.clearSchedule(true);
     sendInfo();
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     jsonResponse["status"] = "success";
     jsonResponse["message"] = "Schedule cleared";
 
@@ -221,7 +222,7 @@ void handleClearSchedule(AsyncWebServerRequest *request)
 
 void handleStopSchedule(AsyncWebServerRequest *request)
 {
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     if (!Scheduler.schedule.empty())
     {
         Scheduler.stop();
@@ -245,7 +246,7 @@ void handleStopSchedule(AsyncWebServerRequest *request)
 
 void handleStartSchedule(AsyncWebServerRequest *request)
 {
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     if (!Scheduler.schedule.empty())
     {
         Scheduler.start();
@@ -274,7 +275,7 @@ void handleClearStorage(AsyncWebServerRequest *request)
     storage.clear();
     storage.end();
 
-    StaticJsonDocument<256> jsonResponse;
+    JsonDocument jsonResponse;
     jsonResponse["status"] = "success";
     jsonResponse["message"] = "Storage cleared";
 

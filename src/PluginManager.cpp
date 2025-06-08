@@ -1,7 +1,9 @@
 #include "PluginManager.h"
 #include "scheduler.h"
 
-Plugin::Plugin() : id(-1) {}
+Plugin::Plugin() : id(-1)
+{
+}
 
 void Plugin::setId(int id)
 {
@@ -13,11 +15,19 @@ int Plugin::getId() const
     return id;
 }
 
-void Plugin::teardown() {}
-void Plugin::loop() {}
-void Plugin::websocketHook(DynamicJsonDocument &request) {}
+void Plugin::teardown()
+{
+}
+void Plugin::loop()
+{
+}
+void Plugin::websocketHook(JsonDocument &request)
+{
+}
 
-PluginManager::PluginManager() : nextPluginId(1) {}
+PluginManager::PluginManager() : nextPluginId(1)
+{
+}
 
 void PluginManager::init()
 {
@@ -105,8 +115,7 @@ void PluginManager::setupActivePlugin()
 
 void PluginManager::runActivePlugin()
 {
-    if (activePlugin && currentStatus != UPDATE &&
-        currentStatus != LOADING && currentStatus != WSBINARY)
+    if (activePlugin && currentStatus != UPDATE && currentStatus != LOADING && currentStatus != WSBINARY)
     {
         activePlugin->loop();
     }

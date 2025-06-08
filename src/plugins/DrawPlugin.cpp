@@ -2,65 +2,65 @@
 
 void DrawPlugin::setup()
 {
-  delay(50);
-  Screen.clear();
-  if (Screen.isCacheEmpty())
-  {
-    Screen.loadFromStorage();
-  }
-  else
-  {
-    Screen.restoreCache();
-  }
+    delay(50);
+    Screen.clear();
+    if (Screen.isCacheEmpty())
+    {
+        Screen.loadFromStorage();
+    }
+    else
+    {
+        Screen.restoreCache();
+    }
 #ifdef ENABLE_SERVER
-  sendInfo();
+    sendInfo();
 #endif
 }
 
 void DrawPlugin::teardown()
 {
-  Screen.cacheCurrent();
+    Screen.cacheCurrent();
 }
 
-void DrawPlugin::websocketHook(DynamicJsonDocument &request)
+void DrawPlugin::websocketHook(JsonDocument &request)
 {
-  const char *event = request["event"];
+    const char *event = request["event"];
 
-  if (currentStatus == NONE)
-  {
-    if (!strcmp(event, "led"))
+    if (currentStatus == NONE)
     {
-      Screen.setPixelAtIndex(request["index"], request["status"]);
-    }
-    else if (!strcmp(event, "clear"))
-    {
-      Screen.clear();
-    }
-    else if (!strcmp(event, "screen"))
-    {
-      uint8_t buffer[ROWS * COLS];
-      for (int i = 0; i < ROWS * COLS; i++)
-      {
-        buffer[i] = request["data"][i];
-      }
-      Screen.setRenderBuffer(buffer);
-    }
-    else if (!strcmp(event, "persist"))
-    {
-      Screen.persist();
-    }
-    else if (!strcmp(event, "load"))
-    {
-      Screen.loadFromStorage();
+        if (!strcmp(event, "led"))
+        {
+            Screen.setPixelAtIndex(request["index"], request["status"]);
+        }
+        else if (!strcmp(event, "clear"))
+        {
+            Screen.clear();
+        }
+        else if (!strcmp(event, "screen"))
+        {
+            uint8_t buffer[ROWS * COLS];
+            for (int i = 0; i < ROWS * COLS; i++)
+            {
+                buffer[i] = request["data"][i];
+            }
+            Screen.setRenderBuffer(buffer);
+        }
+        else if (!strcmp(event, "persist"))
+        {
+            Screen.persist();
+        }
+        else if (!strcmp(event, "load"))
+        {
+            Screen.loadFromStorage();
 
 #ifdef ENABLE_SERVER
-      sendInfo();
+            sendInfo();
 #endif
+        }
     }
-  }
 }
 
 const char *DrawPlugin::getName() const
 {
-  return "Draw";
+    return "Draw";
 }

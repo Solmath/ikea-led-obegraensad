@@ -45,7 +45,7 @@ void WeatherPlugin::update()
 
     if (code == HTTP_CODE_OK)
     {
-        DynamicJsonDocument doc(2048);
+        JsonDocument doc;
         deserializeJson(doc, http.getString());
 
         int temperature = round(doc["current_condition"][0]["temp_C"].as<float>());

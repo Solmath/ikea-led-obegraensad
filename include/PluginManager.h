@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ArduinoJson.h>
 #include <Arduino.h>
-#include <vector>
+#include <ArduinoJson.h>
 #include <string>
+#include <vector>
 
 #include "screen.h"
 #include "signs.h"
@@ -11,16 +11,18 @@
 
 class Plugin
 {
-private:
+  private:
     int id;
 
-public:
+  public:
     Plugin();
 
-    virtual ~Plugin() {}
+    virtual ~Plugin()
+    {
+    }
 
     virtual void teardown();
-    virtual void websocketHook(DynamicJsonDocument &request);
+    virtual void websocketHook(JsonDocument &request);
     virtual void setup() = 0;
     virtual void loop();
     virtual const char *getName() const = 0;
@@ -31,13 +33,13 @@ public:
 
 class PluginManager
 {
-private:
+  private:
     std::vector<Plugin *> plugins;
     Plugin *activePlugin;
     int nextPluginId;
     int persistedPluginId = 1;
 
-public:
+  public:
     PluginManager();
 
     int addPlugin(Plugin *plugin);

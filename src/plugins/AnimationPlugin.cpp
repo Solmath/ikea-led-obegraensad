@@ -46,7 +46,7 @@ void AnimationPlugin::loop()
     }
 }
 
-void AnimationPlugin::websocketHook(DynamicJsonDocument &request)
+void AnimationPlugin::websocketHook(JsonDocument &request)
 {
     const char *event = request["event"];
     if (!strcmp(event, "upload"))

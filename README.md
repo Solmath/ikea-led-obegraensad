@@ -157,8 +157,13 @@ Thanks to [RBEGamer](https://github.com/RBEGamer) who is showing in this [issue]
 ### General Wiring Recommendations
 
 - Try to keep the wires connecting the ESP to the matrix as short as possible.
-- Use a logic level converter like the SparkFun BOB-12009 or Adafruit 757 for 3.3V→5V conversion
-- Add a 470µF-1000µF electrolytic capacitor and a 100nF ceramic capacitor at matrix power input in parallel
+  - Long wires can cause signal degradation and timing issues
+- Use a logic level converter like the SparkFun BOB-12009 or Adafruit 757
+  - Converts ESP32's 3.3V signals to proper 5V levels for SCT2024 drivers
+- Add decoupling capacitors
+  - 470µF-1000µF electrolytic capacitor across 5V power rails
+  - 100nF ceramic capacitor in parallel for high-frequency filtering
+  - Mount capacitors as close as possible to matrix power input
 
 #### Schematic
 

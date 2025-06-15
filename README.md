@@ -40,7 +40,7 @@ Turn your OBEGRÄNSAD LED Wall Lamp into a live drawing canvas
 
 # Control the board
 
-https://github.com/user-attachments/assets/ddf91be1-2c95-4adc-b178-05b0781683cc
+<video src="https://github.com/user-attachments/assets/ddf91be1-2c95-4adc-b178-05b0781683cc" controls width="100%"></video>
 
 You can control the lamp with a supplied web GUI.
 You can get the IP via serial output or you can search it in your router settings.
@@ -51,7 +51,7 @@ First of all. This software was written for the ESP32 Dev Board, but it should w
 
 The ESP32 I used:
 
-<img src="https://user-images.githubusercontent.com/15351728/200148521-86d0f9e6-2c41-4707-b2d9-8aa24a0e440e.jpg" width="60%" />
+![ESP32 Dev Board used for OBEGRÄNSAD hack](https://user-images.githubusercontent.com/15351728/200148521-86d0f9e6-2c41-4707-b2d9-8aa24a0e440e.jpg)
 
 Verified to work with TTGO LoRa32 V2.1 (T3_V1.6.1).
 Note: On esp8266 per pixel brightness only works when storage and global brightness (analogWrite) are disabled.
@@ -62,12 +62,12 @@ I'm sorry to say this, but you'll have to pry open the back of your Lamp, as IKE
 
 ## The panels
 
-<img src="https://user-images.githubusercontent.com/15351728/200183585-39c1668d-665b-4c12-bcbb-387aec1d3874.JPG" width="60%" />
+![Opened IKEA OBEGRÄNSAD lamp showing LED panels](https://user-images.githubusercontent.com/15351728/200183585-39c1668d-665b-4c12-bcbb-387aec1d3874.JPG)
 
 After you open the back, you will see 4 identical plates. These are each equipped with 64 Leds in 4 fields. We are only interested in the lowest one. Here you will find 6 connectors at the bottom edge, to which we connect our board.
 Above is a microcontroller. You have to remove it, because it contains the standard programs.
 
-<img src="https://user-images.githubusercontent.com/86414213/205998862-e9962695-1328-49ea-b546-be592cbad3c2.jpg" width="90%" />
+![Opened IKEA OBEGRÄNSAD lamp showing microcontroller and connectors](https://user-images.githubusercontent.com/86414213/205998862-e9962695-1328-49ea-b546-be592cbad3c2.jpg)
 
 ### ESP32 Setup with VS Code and PlatformIO
 
@@ -76,50 +76,50 @@ Above is a microcontroller. You have to remove it, because it contains the stand
    - Install **[Visual Studio Code](https://code.visualstudio.com/)**.
    - Install the **PlatformIO IDE** extension from the VS Code Extensions Marketplace.
 
-2. **Clone the Project**
+1. **Clone the Project**
 
    - Download the project from GitHub and open it in VS Code. PlatformIO will automatically load dependencies.
 
-```bash
-git clone git@github.com:ph1p/ikea-led-obegraensad.git
-cd ikea-led-obegraensad
-code .
-```
+    ```bash
+    git clone git@github.com:ph1p/ikea-led-obegraensad.git
+    cd ikea-led-obegraensad
+    code .
+    ```
 
-3. **Connect ESP32**
+1. **Connect ESP32**
 
    - Connect your ESP32 via USB.
    - Check the COM port in the **PlatformIO Devices** tab.
 
-4. **Prepare the Project**
+1. **Prepare the Project**
 
    - Perform a `PlatformIO: Clean` (Recycle bin icon at the bottom right).
    - Add a `secrets.h` file to the `include` directory. Modify passwords and save the file. Go in the next section for WiFi instructions.
 
-```cpp
-#pragma once
+    ```cpp
+    #pragma once
+    
+    #define WIFI_HOSTNAME ""
+    
+    #ifdef ESP8266
+    #define WIFI_SSID ""
+    #define WIFI_PASSWORD ""
+    #endif
+    
+    #define OTA_USERNAME ""
+    #define OTA_PASSWORD ""
+    ```
 
-#define WIFI_HOSTNAME ""
+    - Set variables inside `include/constants.h`.
 
-#ifdef ESP8266
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
-#endif
-
-#define OTA_USERNAME ""
-#define OTA_PASSWORD ""
-```
-
-- Set variables inside `include/constants.h`.
-
-5. **Build the Project**
+1. **Build the Project**
 
    - Click the `PlatformIO Build` icon (bottom right corner).
    - Check the log for missing libraries.
      - Use the **Libraries** icon in PlatformIO to install required libraries.
    - Repeat `Clean` and `Build` until the build succeeds.
 
-6. **Upload to ESP32**
+1. **Upload to ESP32**
    - Click `PlatformIO Upload` (bottom right) to upload the firmware to the ESP32.
 
 ### Configuring WiFi with WiFi manager
@@ -148,18 +148,19 @@ Connect them like this and remember to set them in `include/constants.h` accordi
 |  BUTTON one end  | GPIO16 |    IO21     | GPIO2 D4  |     GPIO25      |
 | BUTTON other end |  GND   |     GND     |    GND    |       GND       |
 
-<img src="https://user-images.githubusercontent.com/86414213/205999001-6213fc4f-be2f-4305-a17a-44fdc9349069.jpg" width="60%" />
+![Connections on the panel](https://user-images.githubusercontent.com/86414213/205999001-6213fc4f-be2f-4305-a17a-44fdc9349069.jpg)
 
 ### Alternate Button Wiring
 
 Thanks to [RBEGamer](https://github.com/RBEGamer) who is showing in this [issue](https://github.com/ph1p/ikea-led-obegraensad/issues/79) how to use the original button wiring. With this solution you won't need the "BUTTON one end" and "BUTTON other end" soldering from the table above.
+
 # HTTP API Endpoints
 
 ## Get Information
 
 Get current values and the (fixed) metadata, like number of rows and columns and a list of available plugins.
 
-```
+``` bash
 GET http://your-server/api/info
 ```
 
@@ -204,7 +205,7 @@ curl http://your-server/api/info
 
 To set an active plugin by ID, make an HTTP PATCH request to the following endpoint, passing the parameter as a query string:
 
-```
+``` bash
 PATCH http://your-server/api/plugin
 ```
 
@@ -284,7 +285,7 @@ curl -X PATCH "http://your-server/api/brightness?value=100"
 
 To get the current displayed data as a byte-array, each byte representing the brightness value. Be aware that the global brightness value gets applied AFTER these values.
 
-```
+``` bash
 GET http://your-server/api/data
 ```
 
@@ -381,7 +382,7 @@ curl http://your-server/api/schedule/stop
 
 To retrieve the current display data as a byte-array, each byte representing the brightness value. The global brightness is applied after these values.
 
-```
+```bash
 GET http://your-server/api/data
 ```
 
@@ -403,7 +404,7 @@ curl http://your-server/api/data
 
 To display a message on the LED display, users can make an HTTP GET request to the following endpoint:
 
-```
+```bash
 GET http://your-server/api/message
 ```
 
@@ -438,7 +439,7 @@ curl "http://your-server/api/message?text=Hello&graph=8,5,2,1,0,0,1,4,7,10,13,14
 
 To remove a message from the display, users can make an HTTP GET request to the following endpoint:
 
-```
+```bash
 GET http://your-server/api/removemessage
 ```
 
@@ -467,7 +468,7 @@ curl "http://your-server/api/removemessage?id=1"
 
 To clear the data storage:
 
-```
+```bash
 GET http://your-server/api/clearstorage
 ```
 

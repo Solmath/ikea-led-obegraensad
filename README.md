@@ -154,6 +154,30 @@ Connect them like this and remember to set them in `include/constants.h` accordi
 
 Thanks to [RBEGamer](https://github.com/RBEGamer) who is showing in this [issue](https://github.com/ph1p/ikea-led-obegraensad/issues/79) how to use the original button wiring. With this solution you won't need the "BUTTON one end" and "BUTTON other end" soldering from the table above.
 
+### General Wiring Recommendations
+
+- Try to keep the wires connecting the ESP to the matrix as short as possible.
+- Use a logic level converter like the SparkFun BOB-12009 or Adafruit 757 for 3.3V→5V conversion
+- Add a 470µF-1000µF electrolytic capacitor and a 100nF ceramic capacitor at matrix power input in parallel
+
+#### Schematic
+
+```text
+ESP                  Logic Level                      IKEA Matrix
+                     Converter                        (SCT2024)
+┌─────────┐         ┌─────────┐                       ┌─────────┐
+│    3.3V ├─────────┤ LV   HV ├─────────┬────┬────────┤ 5V      │
+│         │         │         │  100nF ─┴─  ─┴─ 470µF │         │
+│         │         │         │        ─┬─  ─┬─       │         │
+│     GND ├─────────┤ GND GND ├─────────┴────┴────────┤ GND     │
+│    Data ├─────────┤ LV1 HV1 ├───────────────────────┤ IN      │
+│   Clock ├─────────┤ LV2 HV2 ├───────────────────────┤ CLK     │
+│  Enable ├─────────┤ LV3 HV3 ├───────────────────────┤ EN      │
+│   Latch ├─────────┤ LV4 HV4 ├───────────────────────┤ CLA     │
+│  Button ├─────────┤ LV5 HV5 ├───────────────────────┤ BUTTON  │
+└─────────┘         └─────────┘                       └─────────┘
+```
+
 # HTTP API Endpoints
 
 ## Get Information

@@ -31,7 +31,7 @@ void DDPPlugin::setup()
             Screen.setPixelAtIndex(i, brightness > 4, brightness);
           }
         }
-        Screen.swapBuffers(); // Swap buffers to apply changes
+        Screen.present(); // Swap buffers to apply changes
       }
     });
   }

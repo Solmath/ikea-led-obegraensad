@@ -2,10 +2,11 @@
 #include <BfButton.h>
 #include <SPI.h>
 
-#ifdef ESP82666
+#ifdef ESP8266
 /* Fix duplicate defs of HTTP_GET, HTTP_POST, ... in ESPAsyncWebServer.h */
 #define WEBSERVER_H
 #endif
+
 #include <WiFiManager.h>
 
 #ifdef ESP32
@@ -30,6 +31,7 @@
 #include "plugins/SnakePlugin.h"
 #include "plugins/StarsPlugin.h"
 #include "plugins/TickingClockPlugin.h"
+#include "plugins/ArtNet.h"
 
 #ifdef ENABLE_SERVER
 #include "plugins/AnimationPlugin.h"
@@ -61,7 +63,8 @@ void connectToWiFi()
 {
   // if a WiFi setup AP was started, reboot is required to clear routes
   bool wifiWebServerStarted = false;
-  wifiManager.setWebServerCallback([&wifiWebServerStarted]() { wifiWebServerStarted = true; });
+  wifiManager.setWebServerCallback([&wifiWebServerStarted]()
+                                   { wifiWebServerStarted = true; });
 
   wifiManager.setHostname(WIFI_HOSTNAME);
 
@@ -172,6 +175,7 @@ void baseSetup()
   pluginManager.addPlugin(new WeatherPlugin());
   pluginManager.addPlugin(new AnimationPlugin());
   pluginManager.addPlugin(new DDPPlugin());
+  pluginManager.addPlugin(new ArtNetPlugin());
 #endif
 
   pluginManager.init();
@@ -206,7 +210,6 @@ void setup()
 }
 #endif
 #ifdef ESP8266
-#include <Scheduler.h>
 void screenDrawingTask()
 {
   Screen.setup();
@@ -217,14 +220,14 @@ void screenDrawingTask()
 void setup()
 {
   baseSetup();
-  Scheduler.start(&screenDrawingTask);
+  Scheduler.start();
 }
 #endif
 
 void loop()
 {
   static uint8_t taskCounter = 0;
-  const unsigned long currentMillis = millis();
+
   btn.read();
 
 #ifdef ENABLE_SERVER

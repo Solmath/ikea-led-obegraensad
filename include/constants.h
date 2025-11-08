@@ -54,10 +54,11 @@
 
 enum SYSTEM_STATUS
 {
-    NONE,
-    WSBINARY,
-    UPDATE,
-    LOADING,
+  NONE,
+  WSBINARY,
+  UPDATE,
+  LOADING,
+  MESSAGES,
 };
 
 extern SYSTEM_STATUS currentStatus;

@@ -19,6 +19,7 @@
 #include "PluginManager.h"
 #include "scheduler.h"
 
+#include "plugins/ArtNet.h"
 #include "plugins/BreakoutPlugin.h"
 #include "plugins/CirclePlugin.h"
 #include "plugins/DDPPlugin.h"
@@ -31,7 +32,6 @@
 #include "plugins/SnakePlugin.h"
 #include "plugins/StarsPlugin.h"
 #include "plugins/TickingClockPlugin.h"
-#include "plugins/ArtNet.h"
 
 #ifdef ENABLE_SERVER
 #include "plugins/AnimationPlugin.h"
@@ -63,8 +63,7 @@ void connectToWiFi()
 {
   // if a WiFi setup AP was started, reboot is required to clear routes
   bool wifiWebServerStarted = false;
-  wifiManager.setWebServerCallback([&wifiWebServerStarted]()
-                                   { wifiWebServerStarted = true; });
+  wifiManager.setWebServerCallback([&wifiWebServerStarted]() { wifiWebServerStarted = true; });
 
   wifiManager.setHostname(WIFI_HOSTNAME);
 
@@ -241,7 +240,10 @@ void loop()
   if (currentStatus == NONE)
   {
     Scheduler.update();
+  }
 
+  if (currentStatus == NONE || currentStatus == MESSAGES)
+  {
     if ((taskCounter % 4) == 0)
     {
       Messages.scrollMessageEveryMinute();

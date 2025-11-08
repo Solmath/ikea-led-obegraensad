@@ -7,8 +7,13 @@ Messages_ &Messages_::getInstance()
   return instance;
 }
 
-void Messages_::add(std::string text, int repeat, int id, int delay,
-                    std::vector<int> graph, int miny, int maxy)
+void Messages_::add(std::string text,
+                    int repeat,
+                    int id,
+                    int delay,
+                    std::vector<int> graph,
+                    int miny,
+                    int maxy)
 {
   // First remove any existing message with same id
   remove(id);
@@ -27,6 +32,14 @@ void Messages_::add(std::string text, int repeat, int id, int delay,
 
     activeMessages.push_back(msg);
     previousMinute = -1; // Force immediate display
+
+    // When first message is added, cache current screen and set system status
+    if (!screenCached)
+    {
+      Screen.cacheCurrent();
+      screenCached = true;
+    }
+    currentStatus = MESSAGES;
   }
   else
   {
@@ -37,14 +50,16 @@ void Messages_::add(std::string text, int repeat, int id, int delay,
 void Messages_::remove(int id)
 {
   // Find and remove message with matching id
-  auto it = std::find_if(activeMessages.begin(), activeMessages.end(),
-                         [id](const Message *msg)
-                         { return msg->id == id; });
+  auto it = std::find_if(activeMessages.begin(), activeMessages.end(), [id](const Message *msg) {
+    return msg->id == id;
+  });
 
   if (it != activeMessages.end())
   {
     messagePool.release(*it);
     activeMessages.erase(it);
+    // If no more messages are active, restore screen cache and reset status
+    restoreScreenIfMessagesEmpty();
   }
 }
 
@@ -68,6 +83,8 @@ void Messages_::scroll()
       {
         messagePool.release(msg);
         it = activeMessages.erase(it);
+        // If we've just removed the last message, restore previous screen
+        restoreScreenIfMessagesEmpty();
       }
       else
       {
@@ -79,8 +96,7 @@ void Messages_::scroll()
       ++it;
     }
   }
-
-  Screen.loadFromStorage();
+  // Screen.loadFromStorage();
 }
 
 void Messages_::scrollMessageEveryMinute()
@@ -109,6 +125,19 @@ void Messages_::scrollMessageEveryMinute()
       }
       previousSecond = timeinfo.tm_sec;
     }
+  }
+}
+
+void Messages_::restoreScreenIfMessagesEmpty()
+{
+  if (activeMessages.empty())
+  {
+    if (screenCached)
+    {
+      Screen.restoreCache();
+      screenCached = false;
+    }
+    currentStatus = NONE;
   }
 }
 

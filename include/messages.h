@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include "screen.h"
+#include <vector>
 
 class Message
 {
@@ -74,6 +74,9 @@ private:
   MessagePool messagePool;
   std::vector<Message *> activeMessages;
 
+  // Whether we've cached the previous screen state for message display
+  bool screenCached = false;
+
   int previousMinute = -1;
   int previousSecond = -1;
   int indicatorPixel = 0;
@@ -84,9 +87,15 @@ public:
   Messages_(const Messages_ &) = delete;
   Messages_ &operator=(const Messages_ &) = delete;
 
-  void add(std::string text, int repeat = 0, int id = 0, int delay = 50,
-           std::vector<int> graph = {}, int miny = 0, int maxy = 15);
+  void add(std::string text,
+           int repeat = 0,
+           int id = 0,
+           int delay = 50,
+           std::vector<int> graph = {},
+           int miny = 0,
+           int maxy = 15);
   void remove(int id = 0);
+  void restoreScreenIfMessagesEmpty();
   void scroll();
   void scrollMessageEveryMinute();
 

@@ -660,7 +660,7 @@ const uint8_t GUI_HTML[] PROGMEM = {31,139,8,0,0,0,0,0,2,3,108,18,85,66,229,48,2
 
 void startGui(AsyncWebServerRequest *request)
 {
-  AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", GUI_HTML, GUI_HTML_SIZE);
+  AsyncWebServerResponse *response = request->beginResponse(200, "text/html", GUI_HTML, GUI_HTML_SIZE);
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }

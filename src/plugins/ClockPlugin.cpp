@@ -18,9 +18,7 @@ void ClockPlugin::setup()
 
 void ClockPlugin::loop()
 {
-  static unsigned long lastUpdate = 0;
-  unsigned long now = millis();
-  if (now - lastUpdate >= 1000) // Only update once per second
+  if (getLocalTime(&timeinfo))
   {
     if (previousHour != timeinfo.tm_hour || previousMinutes != timeinfo.tm_min)
     {

@@ -1,4 +1,5 @@
 #include "screen.h"
+#include "constants.h"
 #include <SPI.h>
 #include <algorithm>
 
@@ -17,8 +18,8 @@ void Screen_::setBrightness(uint8_t brightness, bool shouldStore)
   brightness_ = brightness;
 
 #ifndef ESP8266
-  // analogWrite disable the timer1 interrupt on esp8266
-  analogWrite(PIN_ENABLE, 255 - brightness);
+  pinMode(PIN_ENABLE, OUTPUT);
+  digitalWrite(PIN_ENABLE, LOW);
 #endif
 
 #ifdef ENABLE_STORAGE
@@ -41,7 +42,7 @@ void Screen_::setRenderBuffer(const uint8_t *renderBuffer, bool grays)
   {
     for (int i = 0; i < ROWS * COLS; i++)
     {
-      renderBuffer_[i] = renderBuffer[i] * 255;
+      renderBuffer_[i] = renderBuffer[i] * MAX_BRIGHTNESS;
     }
   }
 }
@@ -86,46 +87,16 @@ void Screen_::clearRect(int x, int y, int width, int height)
   }
 }
 
-// CACHE START
-bool Screen_::isCacheEmpty() const
-{
-  for (int i = 0; i < ROWS * COLS; i++)
-  {
-    if (cache_[i] != 0)
-      return false;
-  }
-  return true;
-}
-
-void Screen_::cacheCurrent()
-{
-  memcpy(cache_, renderBuffer_, ROWS * COLS);
-}
-
-void Screen_::restoreCache()
-{
-  setRenderBuffer(cache_, true);
-}
-// CACHE END
-
 // STORAGE START
 void Screen_::loadFromStorage()
 {
 #ifdef ENABLE_STORAGE
   storage.begin("led-wall", true);
-  setBrightness(255);
 
-  if (currentStatus == NONE)
-  {
-    clear();
-    storage.getBytes("data", renderBuffer_, ROWS * COLS);
-  }
-  else
-  {
-    storage.getBytes("data", cache_, ROWS * COLS);
-  }
+  clear();
+  storage.getBytes("data", renderBuffer_, ROWS * COLS);
 
-  setBrightness(storage.getUInt("brightness", 255));
+  setBrightness(storage.getUInt("brightness", MAX_BRIGHTNESS));
   setCurrentRotation(storage.getUInt("rotation", 0));
   storage.end();
 #endif
@@ -147,7 +118,7 @@ void Screen_::setup()
 {
 #ifdef ENABLE_STORAGE
   storage.begin("led-wall", true);
-  setBrightness(storage.getUInt("brightness", 255));
+  setBrightness(storage.getUInt("brightness", MAX_BRIGHTNESS));
   Screen.setCurrentRotation(storage.getUInt("rotation", 0));
 
   storage.end();
@@ -157,6 +128,10 @@ void Screen_::setup()
 
   // TODO find proper unused pins for MISO and SS
 #ifdef ESP8266
+  // Initialize control pins
+  pinMode(PIN_LATCH, OUTPUT);
+  digitalWrite(PIN_LATCH, LOW);
+
   SPI.pins(PIN_CLOCK, 12, PIN_DATA, 15); // SCLK, MISO, MOSI, SS);
   SPI.begin();
   SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
@@ -167,7 +142,13 @@ void Screen_::setup()
 #endif
 
 #ifdef ESP32
-  SPI.begin(PIN_CLOCK, -1, PIN_DATA, -1); // SCLK, MISO, MOSI, SS
+  // Initialize control pins
+  pinMode(PIN_LATCH, OUTPUT);
+  pinMode(PIN_ENABLE, OUTPUT);
+  digitalWrite(PIN_LATCH, LOW);
+  digitalWrite(PIN_ENABLE, LOW);
+
+  SPI.begin(PIN_CLOCK, -1, PIN_DATA, -1); // SCLK, MISO, MOSI, SS (-1 for unused pins)
   SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 
   hw_timer_t *Screen_timer = timerBegin(1000000);
@@ -180,7 +161,8 @@ void Screen_::setPixelAtIndex(uint8_t index, uint8_t value, uint8_t brightness)
 {
   if (index >= COLS * ROWS)
     return;
-  renderBuffer_[index] = value <= 0 || brightness <= 0 ? 0 : (brightness > 255 ? 255 : brightness);
+  renderBuffer_[index] =
+      value <= 0 || brightness <= 0 ? 0 : (brightness > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : brightness);
 }
 
 void Screen_::setPixel(uint8_t x, uint8_t y, uint8_t value, uint8_t brightness)
@@ -188,7 +170,7 @@ void Screen_::setPixel(uint8_t x, uint8_t y, uint8_t value, uint8_t brightness)
   if (x >= COLS || y >= ROWS)
     return;
   renderBuffer_[y * COLS + x] =
-      value <= 0 || brightness <= 0 ? 0 : (brightness > 255 ? 255 : brightness);
+      value <= 0 || brightness <= 0 ? 0 : (brightness > MAX_BRIGHTNESS ? MAX_BRIGHTNESS : brightness);
 }
 
 void Screen_::setCurrentRotation(int rotation, bool shouldPersist)
@@ -207,6 +189,13 @@ void Screen_::setCurrentRotation(int rotation, bool shouldPersist)
 
 uint8_t *Screen_::getRotatedRenderBuffer()
 {
+  // No rotation needed - return original buffer directly
+  if (currentRotation == 0)
+  {
+    return renderBuffer_;
+  }
+
+  // Copy buffer for rotation
   for (int i = 0; i < ROWS * COLS; i++)
   {
     rotatedRenderBuffer_[i] = renderBuffer_[i];
@@ -219,20 +208,39 @@ uint8_t *Screen_::getRotatedRenderBuffer()
 
 void Screen_::rotate()
 {
-  for (int row = 0; row < ROWS / 2; row++)
+  if (currentRotation == 1)
   {
-    for (int col = row; col < COLS - row - 1; col++)
+    // 90° clockwise
+    uint8_t temp[TOTAL_PIXELS];
+    for (int row = 0; row < ROWS; row++)
     {
-      for (int r = 0; r < currentRotation; r++)
+      for (int col = 0; col < COLS; col++)
       {
-        swap(rotatedRenderBuffer_[row * ROWS + col],
-             rotatedRenderBuffer_[col * ROWS + (ROWS - 1 - row)]);
-        swap(rotatedRenderBuffer_[row * ROWS + col],
-             rotatedRenderBuffer_[(ROWS - 1 - row) * ROWS + (ROWS - 1 - col)]);
-        swap(rotatedRenderBuffer_[row * ROWS + col],
-             rotatedRenderBuffer_[(ROWS - 1 - col) * ROWS + row]);
+        temp[col * COLS + (ROWS - 1 - row)] = rotatedRenderBuffer_[row * COLS + col];
       }
     }
+    memcpy(rotatedRenderBuffer_, temp, TOTAL_PIXELS);
+  }
+  else if (currentRotation == 2)
+  {
+    // 180°
+    for (int i = 0; i < TOTAL_PIXELS / 2; i++)
+    {
+      swap(rotatedRenderBuffer_[i], rotatedRenderBuffer_[TOTAL_PIXELS - 1 - i]);
+    }
+  }
+  else if (currentRotation == 3)
+  {
+    // 270° clockwise (or 90° counter-clockwise)
+    uint8_t temp[TOTAL_PIXELS];
+    for (int row = 0; row < ROWS; row++)
+    {
+      for (int col = 0; col < COLS; col++)
+      {
+        temp[(COLS - 1 - col) * COLS + row] = rotatedRenderBuffer_[row * COLS + col];
+      }
+    }
+    memcpy(rotatedRenderBuffer_, temp, TOTAL_PIXELS);
   }
 }
 
@@ -255,10 +263,11 @@ ICACHE_RAM_ATTR void Screen_::_render()
 
   for (int idx = 0; idx < ROWS * COLS; idx++)
   {
-    bits[idx >> 3] |= (buf[positions[idx]] > counter ? 0x80 : 0) >> (idx & 7);
+    uint16_t scaledValue = ((uint16_t)buf[positions[idx]] * brightness_) / MAX_BRIGHTNESS;
+    bits[idx >> 3] |= (scaledValue > counter ? 0x80 : 0) >> (idx & 7);
   }
 
-  counter += (256 / GRAY_LEVELS);
+  counter += ((MAX_BRIGHTNESS + 1) / GRAY_LEVELS);
 
   digitalWrite(PIN_LATCH, LOW);
   SPI.writeBytes(bits, sizeof(spi_bits));
@@ -321,7 +330,11 @@ void Screen_::drawRectangle(int x,
   }
 }
 
-void Screen_::drawCharacter(int x, int y, std::vector<int> bits, int bitCount, uint8_t brightness)
+void Screen_::drawCharacter(int x,
+                            int y,
+                            const std::vector<int> &bits,
+                            int bitCount,
+                            uint8_t brightness)
 {
   for (int i = 0; i < bits.size(); i += bitCount)
   {
@@ -332,7 +345,7 @@ void Screen_::drawCharacter(int x, int y, std::vector<int> bits, int bitCount, u
   }
 }
 
-std::vector<int> Screen_::readBytes(std::vector<int> bytes)
+std::vector<int> Screen_::readBytes(const std::vector<int> &bytes)
 {
   vector<int> bits;
   int k = 0;
@@ -350,7 +363,7 @@ std::vector<int> Screen_::readBytes(std::vector<int> bytes)
   return bits;
 };
 
-void Screen_::drawNumbers(int x, int y, std::vector<int> numbers, uint8_t brightness)
+void Screen_::drawNumbers(int x, int y, const std::vector<int> &numbers, uint8_t brightness)
 {
   for (int i = 0; i < numbers.size(); i++)
   {
@@ -358,7 +371,7 @@ void Screen_::drawNumbers(int x, int y, std::vector<int> numbers, uint8_t bright
   }
 }
 
-void Screen_::drawBigNumbers(int x, int y, std::vector<int> numbers, uint8_t brightness)
+void Screen_::drawBigNumbers(int x, int y, const std::vector<int> &numbers, uint8_t brightness)
 {
   for (int i = 0; i < numbers.size(); i++)
   {
@@ -371,7 +384,7 @@ void Screen_::drawWeather(int x, int y, int weather, uint8_t brightness)
   drawCharacter(x, y, readBytes(weatherIcons[weather]), 16, brightness);
 }
 
-void Screen_::scrollText(std::string text, int delayTime, uint8_t brightness, uint8_t fontid)
+void Screen_::scrollText(const std::string &text, int delayTime, uint8_t brightness, uint8_t fontid)
 {
   // lets determine the current font
   font currentFont = (fontid < fonts.size()) ? fonts[fontid] : fonts[0];
@@ -416,7 +429,7 @@ void Screen_::scrollText(std::string text, int delayTime, uint8_t brightness, ui
   }
 }
 
-void Screen_::scrollGraph(std::vector<int> graph,
+void Screen_::scrollGraph(const std::vector<int> &graph,
                           int miny,
                           int maxy,
                           int delayTime,

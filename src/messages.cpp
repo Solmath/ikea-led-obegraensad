@@ -65,8 +65,6 @@ void Messages_::remove(int id)
 
 void Messages_::scroll()
 {
-  Screen.persist();
-
   for (auto it = activeMessages.begin(); it != activeMessages.end();)
   {
     Message *msg = *it;
@@ -115,8 +113,12 @@ void Messages_::scrollMessageEveryMinute()
     {
       if (!activeMessages.empty())
       {
-        indicatorPixel = timeinfo.tm_sec & 0b00000001;
-        Screen.setPixel(0, 0, indicatorPixel);
+        uint8_t newIndicatorPixel = timeinfo.tm_sec & 0b00000001;
+        if (newIndicatorPixel != indicatorPixel)
+        {
+          indicatorPixel = newIndicatorPixel;
+          Screen.setPixel(0, 0, indicatorPixel);
+        }
       }
       else if (indicatorPixel > 0)
       {

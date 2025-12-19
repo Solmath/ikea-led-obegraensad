@@ -20,6 +20,7 @@
 #include "scheduler.h"
 
 #include "plugins/ArtNet.h"
+#include "plugins/Blob.h"
 #include "plugins/BreakoutPlugin.h"
 #include "plugins/CirclePlugin.h"
 #include "plugins/DDPPlugin.h"
@@ -58,6 +59,9 @@ WiFiManager wifiManager;
 
 unsigned long lastConnectionAttempt = 0;
 const unsigned long connectionInterval = 10000;
+unsigned long reconnectionBackoff = 5000;            // Start with 5 seconds
+const unsigned long maxReconnectionBackoff = 300000; // Max 5 minutes
+uint8_t reconnectionAttempts = 0;
 
 void connectToWiFi()
 {
@@ -156,6 +160,7 @@ void baseSetup()
   initWebsocketServer(server);
   initWebServer();
 #endif
+
   pluginManager.addPlugin(new DrawPlugin());
   pluginManager.addPlugin(new BreakoutPlugin());
   pluginManager.addPlugin(new SnakePlugin());
@@ -165,6 +170,7 @@ void baseSetup()
   pluginManager.addPlugin(new CirclePlugin());
   pluginManager.addPlugin(new RainPlugin());
   pluginManager.addPlugin(new FireworkPlugin());
+  pluginManager.addPlugin(new BlobPlugin());
 
 #ifdef ENABLE_SERVER
   pluginManager.addPlugin(new BigClockPlugin());
@@ -177,6 +183,7 @@ void baseSetup()
   pluginManager.addPlugin(new ArtNetPlugin());
 #endif
 
+  Screen.clear();
   pluginManager.init();
   Scheduler.init();
 
@@ -192,7 +199,7 @@ void screenDrawingTask(void *parameter)
   for (;;)
   {
     pluginManager.runActivePlugin();
-    vTaskDelay(10);
+    vTaskDelay(1);
   }
 }
 
@@ -244,17 +251,33 @@ void loop()
 
   if (currentStatus == NONE || currentStatus == MESSAGES)
   {
-    if ((taskCounter % 4) == 0)
+    if ((taskCounter & 0x03) == 0)
     {
       Messages.scrollMessageEveryMinute();
     }
   }
 
-  if ((taskCounter % 16) == 0)
+  // Check WiFi less frequently with exponential backoff
+  if (WiFi.status() != WL_CONNECTED)
   {
-    if (WiFi.status() != WL_CONNECTED)
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastConnectionAttempt >= reconnectionBackoff)
     {
+      Serial.println("WiFi disconnected, attempting reconnection...");
       connectToWiFi();
+
+      // Exponential backoff: double the wait time, up to max
+      reconnectionAttempts++;
+      reconnectionBackoff = min(reconnectionBackoff * 2, maxReconnectionBackoff);
+    }
+  }
+  else
+  {
+    if (reconnectionAttempts > 0)
+    {
+      Serial.println("WiFi reconnected successfully");
+      reconnectionAttempts = 0;
+      reconnectionBackoff = 5000;
     }
   }
 

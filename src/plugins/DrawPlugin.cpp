@@ -4,22 +4,10 @@ void DrawPlugin::setup()
 {
   delay(50);
   Screen.clear();
-  if (Screen.isCacheEmpty())
-  {
-    Screen.loadFromStorage();
-  }
-  else
-  {
-    Screen.restoreCache();
-  }
+  Screen.loadFromStorage();
 #ifdef ENABLE_SERVER
   sendInfo();
 #endif
-}
-
-void DrawPlugin::teardown()
-{
-  Screen.cacheCurrent();
 }
 
 void DrawPlugin::websocketHook(DynamicJsonDocument &request)

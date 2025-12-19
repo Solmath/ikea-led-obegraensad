@@ -252,39 +252,40 @@ void loop()
     {
       Messages.scrollMessageEveryMinute();
     }
+  }
 
-    // Check WiFi less frequently with exponential backoff
-    if (WiFi.status() != WL_CONNECTED)
+  // Check WiFi less frequently with exponential backoff
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastConnectionAttempt >= reconnectionBackoff)
     {
-      unsigned long currentMillis = millis();
-      if (currentMillis - lastConnectionAttempt >= reconnectionBackoff)
-      {
-        Serial.println("WiFi disconnected, attempting reconnection...");
-        connectToWiFi();
+      Serial.println("WiFi disconnected, attempting reconnection...");
+      connectToWiFi();
 
-        // Exponential backoff: double the wait time, up to max
-        reconnectionAttempts++;
-        reconnectionBackoff = min(reconnectionBackoff * 2, maxReconnectionBackoff);
-      }
+      // Exponential backoff: double the wait time, up to max
+      reconnectionAttempts++;
+      reconnectionBackoff = min(reconnectionBackoff * 2, maxReconnectionBackoff);
     }
-    else
+  }
+  else
+  {
+    if (reconnectionAttempts > 0)
     {
-      if (reconnectionAttempts > 0)
-      {
-        Serial.println("WiFi reconnected successfully");
-        reconnectionAttempts = 0;
-        reconnectionBackoff = 5000;
-      }
+      Serial.println("WiFi reconnected successfully");
+      reconnectionAttempts = 0;
+      reconnectionBackoff = 5000;
     }
+  }
 
-    taskCounter++;
-    if (taskCounter > 16)
-    {
-      taskCounter = 0;
-    }
+  taskCounter++;
+  if (taskCounter > 16)
+  {
+    taskCounter = 0;
+  }
 
 #ifdef ENABLE_SERVER
-    cleanUpClients();
+  cleanUpClients();
 #endif
-    delay(1);
-  }
+  delay(1);
+}

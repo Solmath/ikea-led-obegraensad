@@ -32,14 +32,6 @@ void Messages_::add(std::string text,
 
     activeMessages.push_back(msg);
     previousMinute = -1; // Force immediate display
-
-    // When first message is added, cache current screen and set system status
-    if (!screenCached)
-    {
-      Screen.cacheCurrent();
-      screenCached = true;
-    }
-    currentStatus = MESSAGES;
   }
   else
   {
@@ -58,8 +50,6 @@ void Messages_::remove(int id)
   {
     messagePool.release(*it);
     activeMessages.erase(it);
-    // If no more messages are active, restore screen cache and reset status
-    restoreScreenIfMessagesEmpty();
   }
 }
 
@@ -81,8 +71,6 @@ void Messages_::scroll()
       {
         messagePool.release(msg);
         it = activeMessages.erase(it);
-        // If we've just removed the last message, restore previous screen
-        restoreScreenIfMessagesEmpty();
       }
       else
       {
@@ -94,7 +82,8 @@ void Messages_::scroll()
       ++it;
     }
   }
-  // Screen.loadFromStorage();
+
+  Screen.loadFromStorage();
 }
 
 void Messages_::scrollMessageEveryMinute()
@@ -127,19 +116,6 @@ void Messages_::scrollMessageEveryMinute()
       }
       previousSecond = timeinfo.tm_sec;
     }
-  }
-}
-
-void Messages_::restoreScreenIfMessagesEmpty()
-{
-  if (activeMessages.empty())
-  {
-    if (screenCached)
-    {
-      Screen.restoreCache();
-      screenCached = false;
-    }
-    currentStatus = NONE;
   }
 }
 

@@ -129,7 +129,7 @@ void PluginManager::setupActivePlugin()
 void PluginManager::runActivePlugin()
 {
   if (activePlugin && currentStatus != UPDATE && currentStatus != LOADING &&
-      currentStatus != WSBINARY && currentStatus != MESSAGES)
+      currentStatus != WSBINARY)
   {
     activePlugin->loop();
   }

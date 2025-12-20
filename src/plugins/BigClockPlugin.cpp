@@ -15,9 +15,21 @@ void BigClockPlugin::setup()
   previousHH.clear();
   previousMM.clear();
   previousLeadingZero = false;
+
+  updateTimer.reset();
 }
 
 void BigClockPlugin::loop()
+{
+  if (!updateTimer.isReady(UPDATE_INTERVAL_MS))
+  {
+    return;
+  }
+
+  render();
+}
+
+void BigClockPlugin::render()
 {
   if (getLocalTime(&timeinfo))
   {
